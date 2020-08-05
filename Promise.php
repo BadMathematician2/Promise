@@ -9,7 +9,6 @@ use Exception;
 
 class Promise
 {
-
     /**
      * @var mixed
      */
@@ -18,7 +17,6 @@ class Promise
      * @var Exception
      */
     private $exception;
-
     /**
      * @return mixed
      */
@@ -34,16 +32,18 @@ class Promise
      */
     public function promise(Closure $closure, array $args = null, $exception = null)
     {
-        if (! is_null($args)) {
-            $this->data = $args;
-        }
+
 
         if (! is_null($exception)) {
             $this->exception = $exception;
         }
 
         try {
-            $this->data = $closure(...(array)$this->data);
+            if (! is_null($args)) {
+                $this->data = $closure(...$args);
+            }else {
+                $this->data = $closure($this->data);
+            }
         }catch (Exception $e) {
             throw new $this->exception;
         }
