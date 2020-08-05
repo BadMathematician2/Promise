@@ -22,16 +22,20 @@ class Promise
     }
 
     /**
+     * @param mixed $data
+     */
+    public function setData($data): void
+    {
+        $this->data = $data;
+    }
+
+    /**
      * @param Closure $closure
      * @param array|null $args
      */
     private function callClosure(Closure $closure, array $args = null)
     {
-        if ($args != null) {
-            $this->data = $closure(...$args);
-        }else {
-            $this->data = $closure($this->data);
-        }
+         null !== $args ? $this->setData($closure(...$args)) : $this->setData($closure($this->getData()) );
     }
 
     /**
@@ -41,9 +45,9 @@ class Promise
      */
     private function throwException(Exception $e, array $exception)
     {
-        if (key_exists(get_class($e), $exception)) {
-            throw new $exception[get_class($e)];
-        }else {
+        if (isset($exception[$class = get_class($e)])) {
+            throw new $exception[$class];
+        } else {
             throw new $e;
         }
     }
@@ -51,19 +55,19 @@ class Promise
     /**
      * @param Closure $closure
      * @param array|null $args
-     * @param array|null $exception
+     * @param array|null $exceptions
      * @return $this
      * @throws Exception
      */
-    public function promise(Closure $closure, array $args = null, array $exception = null)
+    public function promise(Closure $closure, array $args = null, array $exceptions = null)
     {
-        if ($exception === null) {
+        if ($exceptions === null) {
             $this->callClosure($closure, $args);
-        }else {
+        } else {
             try {
                 $this->callClosure($closure, $args);
             } catch (Exception $e) {
-                $this->throwException($e, $exception);
+                $this->throwException($e, $exceptions);
             }
         }
 
@@ -73,28 +77,27 @@ class Promise
     /**
      * @param Closure $closure
      * @param array|null $args
-     * @param array|null $exception
+     * @param array|null $exceptions
      * @return $this
      * @throws Exception
      */
-    public function map(Closure $closure, array $args = null, array $exception = null)
+    public function map(Closure $closure, array $args = null, array $exceptions = null)
     {
-        if ($args != null) {
-            $this->data = $args;
+        if (null != $args) {
+            $this->setData($args);
         }
 
-        if ($exception === null) {
-            $this->data = array_map($closure, $this->data);
-        }else {
+        if (null === $exceptions) {
+            $this->setData( array_map($closure, $this->getData()) );
+        } else {
             try {
-                $this->data = array_map($closure, $this->data);
-            }catch (Exception $e){
-                $this->throwException($e, $exception);
+                $this->setData( array_map($closure, $this->getData()));
+            } catch (Exception $e){
+                $this->throwException($e, $exceptions);
             }
         }
 
         return $this;
-
     }
 
 }
