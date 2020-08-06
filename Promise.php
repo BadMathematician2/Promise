@@ -62,7 +62,11 @@ class Promise
      */
     private function callClosure(Closure $closure, array $args = null)
     {
-         null !== $args ? $this->setData($closure(...$args)) : $this->setData($closure($this->getData()) );
+        if (null !== $args) {
+            $this->setData($closure(...$args));
+        } else {
+            $this->setData($closure($this->getData()));
+        }
     }
     /**
      * @param Exception $e
