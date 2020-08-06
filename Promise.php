@@ -4,11 +4,16 @@
 namespace App\Packages\Promise;
 
 
+use App\Packages\Promise\Exceptions\BindException;
 use Closure;
 use Exception;
 
 class Promise
 {
+    /**
+     * @var Closure[]
+     */
+    protected $closures = [];
     /**
      * @var mixed
      */
@@ -20,7 +25,26 @@ class Promise
     {
         return $this->data;
     }
-
+    /**
+     * @return Closure[]
+     */
+    private function getBinds(): array
+    {
+        return $this->closures;
+    }
+    /**
+     * @param string $key
+     * @param Closure $closure
+     * @throws BindException
+     */
+    public function bind(string $key, Closure $closure)
+    {
+        if (isset($this->getBinds()[$key])) {
+            throw new BindException();
+        } else {
+            $this->closures[$key] = $closure;
+        }
+    }
     /**
      * @param mixed $data
      */
@@ -28,7 +52,6 @@ class Promise
     {
         $this->data = $data;
     }
-
     /**
      * @param Closure $closure
      * @param array|null $args
@@ -37,7 +60,6 @@ class Promise
     {
          null !== $args ? $this->setData($closure(...$args)) : $this->setData($closure($this->getData()) );
     }
-
     /**
      * @param Exception $e
      * @param array $exception
@@ -51,7 +73,6 @@ class Promise
             throw new $e;
         }
     }
-
     /**
      * @param Closure $closure
      * @param array|null $args
@@ -59,7 +80,7 @@ class Promise
      * @return $this
      * @throws Exception
      */
-    public function promise(Closure $closure, array $args = null, array $exceptions = null)
+    private function promiseClosure(Closure $closure, array $args = null, array $exceptions = null)
     {
         if ($exceptions === null) {
             $this->callClosure($closure, $args);
@@ -73,7 +94,17 @@ class Promise
 
         return $this;
     }
-
+    /**
+     * @param Closure|string $closure
+     * @param array|null $args
+     * @param array|null $exceptions
+     * @return Promise|mixed
+     * @throws Exception
+     */
+    public function promise($closure, array $args = null, array $exceptions = null)
+    {
+        return is_string($closure) ? $this->promise($this->getBinds()[$closure], $args, $exceptions) : $this->promiseClosure($closure, $args, $exceptions);
+    }
     /**
      * @param Closure $closure
      * @param array|null $args
@@ -81,7 +112,7 @@ class Promise
      * @return $this
      * @throws Exception
      */
-    public function map(Closure $closure, array $args = null, array $exceptions = null)
+    private function mapClosure(Closure $closure, array $args = null, array $exceptions = null)
     {
         if (null != $args) {
             $this->setData($args);
@@ -99,5 +130,17 @@ class Promise
 
         return $this;
     }
+    /**
+     * @param Closure|string $closure
+     * @param array|null $args
+     * @param array|null $exceptions
+     * @return $this
+     * @throws Exception
+     */
+    public function map($closure, array $args = null, array $exceptions = null)
+    {
+        return is_string($closure) ? $this->mapClosure($this->getBinds()[$closure], $args, $exceptions) : $this->mapClosure($closure, $args, $exceptions);
+    }
+
 
 }
