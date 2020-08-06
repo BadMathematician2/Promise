@@ -26,6 +26,13 @@ class Promise
         return $this->data;
     }
     /**
+     * @param mixed $data
+     */
+    public function setData($data): void
+    {
+        $this->data = $data;
+    }
+    /**
      * @return Closure[]
      */
     private function getBinds(): array
@@ -39,18 +46,15 @@ class Promise
      */
     public function bind(string $key, Closure $closure)
     {
-        if (isset($this->getBinds()[$key])) {
+        if ($this->bindExists($key)) {
             throw new BindException();
         } else {
             $this->closures[$key] = $closure;
         }
     }
-    /**
-     * @param mixed $data
-     */
-    public function setData($data): void
+    private function bindExists(string $key): bool
     {
-        $this->data = $data;
+        return isset($this->getBinds()[$key]);
     }
     /**
      * @param Closure $closure
